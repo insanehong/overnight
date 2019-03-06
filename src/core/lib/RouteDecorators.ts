@@ -4,65 +4,75 @@
  * created by Sean Maxwell Aug 27, 2018
  */
 
-
 /***********************************************************************************************
  *                                            Routes
  **********************************************************************************************/
 
 export function Get(path?: string): MethodDecorator {
-    return helperForRoutes('get', path);
+  return helperForRoutes("get", path);
+}
+
+export function Head(path?: string): MethodDecorator {
+  return helperForRoutes("head", path);
 }
 
 export function Post(path?: string): MethodDecorator {
-    return helperForRoutes('post', path);
+  return helperForRoutes("post", path);
 }
 
 export function Put(path?: string): MethodDecorator {
-    return helperForRoutes('put', path);
+  return helperForRoutes("put", path);
+}
+
+export function Patch(path?: string): MethodDecorator {
+  return helperForRoutes("patch", path);
 }
 
 export function Delete(path?: string): MethodDecorator {
-    return helperForRoutes('delete', path);
+  return helperForRoutes("delete", path);
 }
 
 function helperForRoutes(httpVerb: string, path?: string): MethodDecorator {
+  return function(
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    const originalMethod = descriptor.value;
+    const middleware = originalMethod.middleware || null;
 
-    return function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    descriptor.value = function(...args: any[]) {
+      return originalMethod.apply(this, args);
+    };
 
-        const originalMethod = descriptor.value;
-        const middleware = originalMethod.middleware || null;
+    descriptor.value.overnightRouteProperties = {
+      httpVerb: httpVerb,
+      path: path ? "/" + path : "",
+      middleware: middleware
+    };
 
-        descriptor.value = function(...args: any[]) {
-            return originalMethod.apply(this, args);
-        };
-
-        descriptor.value.overnightRouteProperties = {
-            httpVerb: httpVerb,
-            path: path ? ('/' + path) : '',
-            middleware: middleware
-        };
-
-        return descriptor;
-    }
+    return descriptor;
+  };
 }
-
 
 /***********************************************************************************************
  *                                         Middleware
  **********************************************************************************************/
 
 export function Middleware(middleware: Function | Function[]): MethodDecorator {
+  return function(
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ): PropertyDescriptor {
+    const originalMethod = descriptor.value;
 
-    return function(target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
+    descriptor.value = function(...args: any[]) {
+      return originalMethod.apply(this, args);
+    };
 
-        const originalMethod = descriptor.value;
+    descriptor.value.middleware = middleware;
 
-        descriptor.value = function(...args: any[]) {
-            return originalMethod.apply(this, args);
-        };
-
-        descriptor.value.middleware = middleware;
-
-        return descriptor;
-    }
+    return descriptor;
+  };
 }
